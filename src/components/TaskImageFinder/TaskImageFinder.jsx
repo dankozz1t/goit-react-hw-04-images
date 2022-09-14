@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { api } from '../../services/api';
 
@@ -19,97 +19,83 @@ const Status = Object.freeze({
   REJECTED: 'rejected',
 });
 
-export class TaskImageFinder extends Component {
-  state = {
-    search: '',
-    page: 1,
-    totalImages: null,
-    images: [],
-    error: null,
-    status: Status.IDLE,
-  };
+export function TaskImageFinder() {
+  const [search, setSearch] = useState('');
+  const [images, setImages] = useState([]);
 
-  handleFormSubmit = search => {
-    this.setState({ search, images: [], page: 1 });
-  };
+  const [page, setPage] = useState(1);
+  const [totalImages, setTotalImages] = useState(null);
 
-  componentDidUpdate(prevProps, prevState) {
-    const { page, search } = this.state;
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState(Status.IDLE);
 
-    if (prevState.search !== search || prevState.page !== page) {
-      this.setState({ status: Status.PENDING });
-
-      api
-        .fetchImages(search, page)
-        .then(({ data }) => {
-          if (prevState.search !== search) {
-            if (data.hits <= 0) {
-              toast.info(`Wtf, Idn what "${search}" is`);
-              this.setState({
-                error: 'not found',
-                status: Status.REJECTED,
-              });
-              return;
-            } else {
-              toast.info(`Im search "${data.total}" images`);
-            }
-
-            this.setState({
-              images: data.hits,
-              totalImages: data.total,
-              status: Status.RESOLVED,
-            });
-          }
-
-          if (prevState.page !== page) {
-            this.setState(prevState => ({
-              images: [...prevState.images, ...data.hits],
-              totalImages: data.total,
-              status: Status.RESOLVED,
-            }));
-          }
-        })
-        .catch(error =>
-          this.setState({ error: error.message, status: Status.REJECTED })
-        );
+  useEffect(() => {
+    if (!search) {
+      return;
     }
-  }
 
-  handleLoadMoreClick = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+    setStatus(Status.PENDING);
+
+    api
+      .fetchImages(search, page)
+      .then(({ data }) => {
+        if (data.hits <= 0) {
+          toast.info(`Wtf, Idn what "${search}" is`);
+          setError('not found');
+          setStatus(Status.REJECTED);
+
+          return;
+        } else {
+          toast.info(`Im search "${data.total}" images`);
+        }
+
+        setImages(state =>
+          page > 1 ? [...state.images, ...data.hits] : data.hits
+        );
+        setTotalImages(data.total);
+        setStatus(Status.RESOLVED);
+      })
+      .catch(error => {
+        setError(error.message);
+        setStatus(Status.REJECTED);
+      });
+  }, [page, search]);
+
+  const handleFormSubmit = search => {
+    setSearch(search);
+    setImages([]);
+    setPage(1);
   };
 
-  render() {
-    const { page, totalImages, images, status, error } = this.state;
+  const handleLoadMoreClick = () => {
+    setPage(prevPage => prevPage + 1);
+  };
 
-    const isShowButton = page * 12 < totalImages ? true : false;
+  return (
+    <div className={s.box}>
+      <Searchbar onSubmit={handleFormSubmit} />
 
-    return (
-      <div className={s.box}>
-        <Searchbar onSubmit={this.handleFormSubmit} />
+      {images.length > 0 && <ImageGalleryList images={images} />}
 
-        {images.length > 0 && <ImageGalleryList images={images} />}
+      {status === 'pending' && <Loader />}
 
-        {status === 'pending' && <Loader />}
+      {status === 'resolved' && (page * 12 < totalImages ? true : false) && (
+        <Button onClick={handleLoadMoreClick} />
+      )}
 
-        {status === 'resolved' && isShowButton && (
-          <Button onClick={this.handleLoadMoreClick} />
-        )}
+      {status === 'rejected' && (
+        <>
+          <img
+            src="https://i.ibb.co/ss9ZJ7L/not-found.jpg"
+            alt="not found images"
+          />
+          <p className={s.error}>
+            Error message: <span className={s.errorMessage}>{error}</span>
+          </p>
+        </>
+      )}
 
-        {status === 'rejected' && (
-          <>
-            <img
-              src="https://i.ibb.co/ss9ZJ7L/not-found.jpg"
-              alt="not found images"
-            />
-            <p className={s.error}>
-              Error message: <span className={s.errorMessage}>{error}</span>
-            </p>
-          </>
-        )}
-
-        <ToastContainer autoClose={3000} theme="dark" />
-      </div>
-    );
-  }
+      <ToastContainer autoClose={3000} theme="dark" />
+    </div>
+  );
 }
