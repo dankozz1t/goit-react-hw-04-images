@@ -45,7 +45,7 @@ export function TaskImageFinder() {
           setStatus(Status.REJECTED);
 
           return;
-        } else {
+        } else if (page === 1) {
           toast.info(`Im search "${data.total}" images`);
         }
 
