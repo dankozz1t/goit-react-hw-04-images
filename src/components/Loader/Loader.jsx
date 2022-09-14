@@ -1,6 +1,6 @@
 import { ThreeDots } from 'react-loader-spinner';
 
-export const Loader = () => {
+export function Loader() {
   return (
     <ThreeDots
       height="100"
@@ -13,4 +13,4 @@ export const Loader = () => {
       visible={true}
     />
   );
-};
+}
