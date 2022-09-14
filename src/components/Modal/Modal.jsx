@@ -1,28 +1,26 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
 import s from './Modal.module.css';
 
-export default class Modal extends Component {
-  static propTypes = {
-    onCloseModal: PropTypes.func.isRequired,
-    children: PropTypes.oneOfType([
-      PropTypes.arrayOf(PropTypes.node),
-      PropTypes.node,
-    ]).isRequired,
-  };
-
-  handleCloseModal = e => {
+export function Modal({ onCloseModal, children }) {
+  const handleCloseModal = e => {
     if (e.target === e.currentTarget) {
-      this.props.onCloseModal();
+      onCloseModal();
     }
   };
 
-  render() {
-    return (
-      <div className={s.Overlay} onClick={this.handleCloseModal}>
-        <div className={s.Modal}>{this.props.children}</div>
-      </div>
-    );
-  }
+  return (
+    <div className={s.Overlay} onClick={handleCloseModal}>
+      <div className={s.Modal}>{children}</div>
+    </div>
+  );
 }
+
+Modal.propTypes = {
+  onCloseModal: PropTypes.func.isRequired,
+  children: PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.node),
+    PropTypes.node,
+  ]).isRequired,
+};
