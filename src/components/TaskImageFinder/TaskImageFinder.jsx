@@ -49,9 +49,7 @@ export function TaskImageFinder() {
           toast.info(`Im search "${data.total}" images`);
         }
 
-        setImages(state =>
-          page > 1 ? [...state.images, ...data.hits] : data.hits
-        );
+        setImages(state => (page > 1 ? [...state, ...data.hits] : data.hits));
         setTotalImages(data.total);
         setStatus(Status.RESOLVED);
       })
